@@ -9,6 +9,10 @@ import Footer from './components/Footer';
 import LandingPage from './pages/LandingPage';
 import JobsFeedPage from './pages/JobsFeedPage';
 import ProfilePage from './pages/ProfilePage';
+import ProfileEditPage from './pages/ProfileEditPage';
+import SwipePage from './pages/SwipePage';
+import Chat from './components/Chat';
+import MatchesPage from './pages/MatchesPage';
 
 function App() {
   return (
@@ -21,6 +25,10 @@ function App() {
             <Route path="/" element={<LandingPage />} />
             <Route path="/jobs" element={<JobsFeedPage />} />
             <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/profile/edit" element={<ProfileEditPage />} />
+            <Route path="/swipe" element={<SwipePage />} />
+            <Route path="/matches" element={<MatchesPage />} />
+            <Route path="/chat/:matchId" element={<Chat />} />
           </Routes>
         </main>
 
