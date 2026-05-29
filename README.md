@@ -1,23 +1,3 @@
-# Junior Match (local development)
-
-This repository contains a Vite + React frontend and a lightweight Express backend for development.
-
-Run the frontend:
-
-```bash
-npm install
-npm run dev
-```
-
-Run the backend server (in a separate terminal):
-
-```bash
-npm run start:server
-# or for auto-restart during development
-npm run dev:server
-```
-
-Frontend expects the API at `http://localhost:4000`. File uploads are served from `/uploads` by the backend.
 # React + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.

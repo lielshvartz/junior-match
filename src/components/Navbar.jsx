@@ -1,44 +1,43 @@
-import { Link } from 'react-router-dom';
-import useAuth from '../hooks/useAuth';
+import { Link, useNavigate } from 'react-router-dom';
+import { supabase } from '../supabaseClient';
 
-function MockLogin() {
-  const { user, login, logout } = useAuth();
-  if (user) return (
-    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-      <div>{user.name} ({user.role})</div>
-      <button onClick={logout} style={{ padding: '6px 8px' }}>יציאה</button>
-    </div>
-  );
-  return (
-    <div style={{ display: 'flex', gap: 8 }}>
-      <button onClick={() => login({ id: 'u1', name: 'Yonatan', role: 'junior' })} style={{ padding: '6px 8px' }}>כניסה Junior</button>
-      <button onClick={() => login({ id: 'e1', name: 'Startup', role: 'employer' })} style={{ padding: '6px 8px' }}>כניסה Employer</button>
-    </div>
-  );
-}
+export default function Navbar({ session }) {
+  const navigate = useNavigate();
 
-export default function Navbar() {
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate('/login');
+  };
+
   return (
-    <nav style={{ 
-      display: 'flex', 
-      justifyContent: 'space-between', 
-      padding: '1rem 2rem', 
-      background: '#1e293b', 
-      color: 'white' 
-    }}>
-      <div style={{ fontWeight: 'bold', fontSize: '1.2rem' }}>
-        JuniorMatch 🎯
+    <nav style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px 30px', backgroundColor: '#1e293b', color: 'white', direction: 'rtl' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+        <Link to="/" style={{ color: '#38bdf8', textDecoration: 'none', fontWeight: 'bold', fontSize: '1.2rem' }}>🎯 JuniorMatch</Link>
+        
+        {/* דפים שפתוחים תמיד */}
+        <Link to="/" style={{ color: 'white', textDecoration: 'none' }}>בית</Link>
+        <Link to="/jobs" style={{ color: 'white', textDecoration: 'none' }}>פיד משרות</Link>
+        
+        {/* דפים שיופיעו רק כשהמשתמש מחובר באמת */}
+        {session && (
+          <>
+            <Link to="/swipe-test" style={{ color: 'white', textDecoration: 'none' }}>Swipe</Link>
+            <Link to="/profile" style={{ color: 'white', textDecoration: 'none' }}>פרופיל</Link>
+            <Link to="/profile-edit" style={{ color: 'white', textDecoration: 'none' }}>ערוך פרופיל</Link>
+            <Link to="/matches" style={{ color: 'white', textDecoration: 'none' }}>התאמות</Link>
+          </>
+        )}
       </div>
-      <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
-        <div style={{ display: 'flex', gap: 12 }}>
-          <Link to="/" style={{ color: 'white', textDecoration: 'none' }}>בית</Link>
-          <Link to="/jobs" style={{ color: 'white', textDecoration: 'none' }}>משרות</Link>
-          <Link to="/swipe" style={{ color: 'white', textDecoration: 'none' }}>Swipe</Link>
-          <Link to="/profile" style={{ color: 'white', textDecoration: 'none' }}>פרופיל</Link>
-          <Link to="/profile/edit" style={{ color: 'white', textDecoration: 'none' }}>ערוך פרופיל</Link>
-          <Link to="/matches" style={{ color: 'white', textDecoration: 'none' }}>התאמות</Link>
-        </div>
-        <MockLogin />
+
+      <div>
+        {session ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+            <span style={{ color: '#38bdf8', fontSize: '0.9rem' }}>{session.user.email}</span>
+            <button onClick={handleLogout} style={{ backgroundColor: '#ef4444', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>יציאה 🚪</button>
+          </div>
+        ) : (
+          <Link to="/login" style={{ backgroundColor: '#2563eb', color: 'white', textDecoration: 'none', padding: '8px 18px', borderRadius: '6px', fontWeight: 'bold' }}>כניסה / הרשמה 🔐</Link>
+        )}
       </div>
     </nav>
   );
