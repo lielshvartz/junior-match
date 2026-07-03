@@ -1,106 +1,117 @@
-import React, { useEffect, useState } from 'react';
-import useApi from '../hooks/useApi';
-import FileUploader from '../components/FileUploader';
+import { useEffect, useState } from 'react';
+import { supabase } from '../supabaseClient';
+import { useNavigate } from 'react-router-dom';
 
 export default function ProfileEditPage() {
-  const api = useApi();
-  const [profile, setProfile] = useState({ name: '', bio: '', skills: [], portfolio: [], avatarUrl: '', resumeUrl: '' });
+  const [fullName, setFullName] = useState('');
+  const [bio, setBio] = useState('');
+  const [email, setEmail] = useState(''); // סטייט חדש לשמירת המייל
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState(null);
+  const [userId, setUserId] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    // In a real app we'd fetch the current user's profile; here we skip that step.
-  }, []);
+    async function getProfile() {
+      // 1. נבדוק מי המשתמש המחובר ונשלוף את המייל שלו
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError || !user) {
+        navigate('/login');
+        return;
+      }
 
-  function handleChange(e) {
-    const { name, value } = e.target;
-    setProfile(prev => ({ ...prev, [name]: value }));
-  }
+      setUserId(user.id);
+      setEmail(user.email || ''); // שמירת המייל של המשתמש הנוכחי
 
-  function addSkill() {
-    setProfile(prev => ({ ...prev, skills: [...prev.skills, ''] }));
-  }
+      // 2. נשלוף את הנתונים הקיימים שלו מטבלת הפרופילים
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id);
 
-  function setSkill(i, val) {
-    setProfile(prev => {
-      const skills = [...prev.skills];
-      skills[i] = val;
-      return { ...prev, skills };
-    });
-  }
+      if (data && data.length > 0) {
+        setFullName(data[0].full_name || '');
+        setBio(data[0].bio || '');
+      }
+      setLoading(false);
+    }
 
-  function removeSkill(i) {
-    setProfile(prev => ({ ...prev, skills: prev.skills.filter((s, idx) => idx !== i) }));
-  }
+    getProfile();
+  }, [navigate]);
 
-  async function handleSave() {
+  async function handleSave(e) {
+    e.preventDefault();
     setSaving(true);
-    setMessage(null);
-    try {
-      // Create profile (simple flow)
-      const res = await api.post('/api/profiles', profile);
-      setMessage('שמור בהצלחה');
-      setProfile(res);
-    } catch (err) {
-      setMessage('שגיאה בשמירה: ' + err.message);
-    } finally {
-      setSaving(false);
+
+    // 3. שליחת כל הנתונים הנדרשים כולל עמודת האימייל החשובה
+    const { error } = await supabase
+      .from('profiles')
+      .upsert({
+        id: userId,
+        full_name: fullName,
+        bio: bio,
+        email: email // הוספת המייל כדי לפתור את השגיאה
+      }, { onConflict: 'id' });
+
+    setSaving(false);
+
+    if (error) {
+      console.error('שגיאה מלאה:', error);
+      alert('שגיאה בשמירת הנתונים: ' + error.message);
+    } else {
+      alert('הפרופיל עודכן בהצלחה! 🎉');
+      navigate('/profile'); // החזרה לעמוד הפרופיל הראשי
     }
   }
 
-  function handleAvatarUploaded(res) {
-    setProfile(prev => ({ ...prev, avatarUrl: res.url }));
-  }
-
-  function handleResumeUploaded(res) {
-    setProfile(prev => ({ ...prev, resumeUrl: res.url }));
-  }
+  if (loading) return <h2 style={{ textAlign: 'center', marginTop: '50px' }}>טוען נתונים... ⏳</h2>;
 
   return (
-    <div style={{ maxWidth: 800, margin: '0 auto', padding: 20, textAlign: 'right' }}>
-      <h1>עריכת פרופיל</h1>
-      <div style={{ marginTop: 12 }}>
-        <label>שם מלא</label>
-        <input name="name" value={profile.name} onChange={handleChange} style={{ width: '100%', padding: 8, marginTop: 6 }} />
-      </div>
+    <div style={{ maxWidth: '600px', margin: '40px auto', padding: '20px', border: '1px solid #e2e8f0', borderRadius: '12px', backgroundColor: '#ffffff', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', direction: 'rtl' }}>
+      <h1 style={{ color: '#1e293b', marginBottom: '20px', borderBottom: '2px solid #38bdf8', paddingBottom: '10px' }}>עריכת פרופיל ✏️</h1>
+      
+      <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+          <label style={{ fontWeight: 'bold', color: '#475569' }}>שם מלא:</label>
+          <input 
+            type="text" 
+            value={fullName} 
+            onChange={(e) => setFullName(e.target.value)} 
+            required
+            style={{ padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '1rem' }}
+          />
+        </div>
 
-      <div style={{ marginTop: 12 }}>
-        <label>תקציר (Bio)</label>
-        <textarea name="bio" value={profile.bio} onChange={handleChange} style={{ width: '100%', padding: 8, marginTop: 6 }} />
-      </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+          <label style={{ fontWeight: 'bold', color: '#475569' }}>ביוגרפיה / רקע מקצועי:</label>
+          <textarea 
+            value={bio} 
+            onChange={(e) => setBio(e.target.value)} 
+            rows="4"
+            placeholder="ספר קצת על עצמך, ניסיון, טכנולוגיות שאתה מכיר..."
+            style={{ padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '1rem', resize: 'vertical' }}
+          />
+        </div>
 
-      <div style={{ marginTop: 12 }}>
-        <label>כישורים</label>
-        {profile.skills.map((s, i) => (
-          <div key={i} style={{ display: 'flex', gap: 8, marginTop: 6 }}>
-            <input value={s} onChange={e => setSkill(i, e.target.value)} style={{ flex: 1, padding: 8 }} />
-            <button onClick={() => removeSkill(i)}>הסר</button>
-          </div>
-        ))}
-        <button onClick={addSkill} style={{ marginTop: 8 }}>הוסף כישור</button>
-      </div>
-
-      <div style={{ marginTop: 12 }}>
-        <label>קישורי פורטפוליו (מופרדים בפסיק)</label>
-        <input value={profile.portfolio.join(',')} onChange={e => setProfile(prev => ({ ...prev, portfolio: e.target.value.split(',').map(s => s.trim()).filter(Boolean) }))} style={{ width: '100%', padding: 8, marginTop: 6 }} />
-      </div>
-
-      <div style={{ marginTop: 12 }}>
-        <label>תמונת פרופיל (JPEG/PNG)</label>
-        <FileUploader onUploaded={handleAvatarUploaded} accept=".png,.jpg,.jpeg" />
-        {profile.avatarUrl && <div style={{ marginTop: 8 }}>תמונה: <a href={profile.avatarUrl} target="_blank">פתח</a></div>}
-      </div>
-
-      <div style={{ marginTop: 12 }}>
-        <label>קורות חיים (PDF)</label>
-        <FileUploader onUploaded={handleResumeUploaded} accept=".pdf" />
-        {profile.resumeUrl && <div style={{ marginTop: 8 }}>קורות חיים: <a href={profile.resumeUrl} target="_blank">פתח</a></div>}
-      </div>
-
-      <div style={{ marginTop: 20 }}>
-        <button onClick={handleSave} disabled={saving} style={{ background: 'var(--primary)', color: 'white', padding: '10px 16px', borderRadius: 8 }}>{saving ? 'שומר...' : 'שמור פרופיל'}</button>
-        {message && <div style={{ marginTop: 8 }}>{message}</div>}
-      </div>
+        <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+          <button 
+            type="submit" 
+            disabled={saving}
+            style={{ flex: 1, backgroundColor: '#38bdf8', color: 'white', border: 'none', padding: '12px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '1rem' }}
+          >
+            {saving ? 'שומר שינויים... ⏳' : 'שמור פרופיל 💾'}
+          </button>
+          
+          <button 
+            type="button" 
+            onClick={() => navigate('/profile')}
+            style={{ backgroundColor: '#94a3b8', color: 'white', border: 'none', padding: '12px 20px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '1rem' }}
+          >
+            ביטול
+          </button>
+        </div>
+      </form>
     </div>
   );
 }
