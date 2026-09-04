@@ -14,7 +14,7 @@ import LoginPage from './pages/LoginPage';
 import MatchesPage from './pages/MatchesPage';
 import ProfileEditPage from './pages/ProfileEditPage';
 import SwipePage from './pages/SwipePage';
-
+import Chat from './components/Chat';
 export default function App() {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -57,7 +57,10 @@ export default function App() {
             <Route path="/profile-edit" element={session ? <ProfileEditPage /> : <Navigate to="/login" />} />
             <Route path="/matches" element={session ? <MatchesPage /> : <Navigate to="/login" />} />
             <Route path="/swipe-test" element={session ? <SwipePage /> : <Navigate to="/login" />} />
-            
+            <Route 
+  path="/chat/:id" 
+  element={session ? <Chat session={session} /> : <Navigate to="/login" />} 
+/>
             {/* הגנה לכל כתובת שגויה */}
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>

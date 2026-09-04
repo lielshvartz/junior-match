@@ -53,4 +53,19 @@ a {
 h1, h2, h3 {
   color: var(--text-main);
   margin-bottom: 1rem;
+/* תיקון כפתור התחברות ורספונסיביות ל-Navbar */
+nav a, 
+.navbar a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  max-height: 40px;
+}
+
+@media (max-width: 640px) {
+  nav, .navbar {
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+  }
+}
 }
