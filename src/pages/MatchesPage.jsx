@@ -9,42 +9,14 @@ export default function MatchesPage() {
   useEffect(() => {
     async function loadMatches() {
       try {
-        // שליפת כל ההתאמות הפעילות ללא תלות ב-User ID
-        const { data: matchesData, error: matchesError } = await supabase
+        const { data, error } = await supabase
           .from('matches')
-          .select('*')
-          .eq('is_liked', true);
+          .select('*');
 
-        if (matchesError) throw matchesError;
-
-        if (matchesData && matchesData.length > 0) {
-          const jobIds = matchesData.map(m => m.job_id).filter(Boolean);
-          
-          let jobsMap = {};
-          if (jobIds.length > 0) {
-            const { data: jobsData } = await supabase
-              .from('jobs')
-              .select('id, title, company')
-              .in('id', jobIds);
-
-            if (jobsData) {
-              jobsData.forEach(job => {
-                jobsMap[job.id] = job;
-              });
-            }
-          }
-
-          const combined = matchesData.map(m => ({
-            ...m,
-            jobs: jobsMap[m.job_id] || { title: `משרה #${m.job_id}`, company: 'חברה' }
-          }));
-
-          setMutuals(combined);
-        } else {
-          setMutuals([]);
-        }
+        if (error) throw error;
+        setMutuals(data || []);
       } catch (err) {
-        console.error('Error loading matches:', err);
+        console.error('Error:', err);
       } finally {
         setLoading(false);
       }
@@ -53,15 +25,13 @@ export default function MatchesPage() {
     loadMatches();
   }, []);
 
-  if (loading) {
-    return <div style={{ maxWidth: 900, margin: '40px auto', textAlign: 'center' }}>טוען התאמות...</div>;
-  }
+  if (loading) return <div style={{ maxWidth: 900, margin: '40px auto', textAlign: 'center' }}>טוען...</div>;
 
   return (
     <div style={{ maxWidth: 900, margin: '40px auto', textAlign: 'right', padding: '0 20px' }}>
-      <h1>התאמות</h1>
+      <h1>התאמות פעילות ({mutuals.length})</h1>
       {mutuals.length === 0 ? (
-        <div>אין התאמות עדיין</div>
+        <div>אין התאמות כרגע</div>
       ) : (
         <ul style={{ listStyle: 'none', padding: 0 }}>
           {mutuals.map(m => (
@@ -75,12 +45,11 @@ export default function MatchesPage() {
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
-                background: '#fff',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
+                background: '#fff'
               }}
             >
               <span>
-                <strong>{m.jobs?.title}</strong> - {m.jobs?.company}
+                <strong>התאמה למשרה #{m.job_id}</strong>
               </span>
               <Link 
                 to={`/chat/${m.id}`} 
@@ -90,7 +59,7 @@ export default function MatchesPage() {
                   padding: '8px 16px',
                   borderRadius: '6px',
                   textDecoration: 'none',
-                  fontWeight: 600
+                  fontWeight: 'bold'
                 }}
               >
                 פתח צ'אט
