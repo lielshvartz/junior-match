@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 
 export default function LoginPage() {
@@ -7,6 +8,7 @@ export default function LoginPage() {
   const [isRegistering, setIsRegistering] = useState(false);
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   const handleAuth = async (e) => {
     e.preventDefault();
@@ -24,7 +26,7 @@ export default function LoginPage() {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
         setMessage('התחברת בהצלחה! 🎉');
-        window.location.href = '/jobs'; // מעבר לפיד המשרות אחרי התחברות
+        navigate('/jobs'); // ניווט פנימי חלק ללא ריענון דפדפן וללא 404
       }
     } catch (error) {
       setMessage(`שגיאה: ${error.message}`);
